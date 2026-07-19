@@ -1,0 +1,199 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 500" fill="none">
+  <defs>
+    <linearGradient id="bgG" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1b3e"/><stop offset="100%" stop-color="#060d1a"/>
+    </linearGradient>
+    <linearGradient id="featG1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4da6ff"/><stop offset="100%" stop-color="#1a3d7c"/>
+    </linearGradient>
+    <linearGradient id="featG2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#00d4aa"/><stop offset="100%" stop-color="#0d4d40"/>
+    </linearGradient>
+    <linearGradient id="featG3" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#5c3a0a"/>
+    </linearGradient>
+    <filter id="glowS"><feGaussianBlur stdDeviation="2"/><feMerge><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrB" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0,0 7,2.5 0,5" fill="#6a9fd8"/></marker>
+    <marker id="arrG" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0,0 7,2.5 0,5" fill="#00d4aa"/></marker>
+    <marker id="arrO" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto"><polygon points="0,0 7,2.5 0,5" fill="#f59e0b"/></marker>
+    <clipPath id="imgClip"><rect x="38" y="70" width="200" height="180" rx="8"/></clipPath>
+    <clipPath id="outClip"><rect x="682" y="70" width="200" height="180" rx="8"/></clipPath>
+  </defs>
+
+  <!-- BG -->
+  <rect width="920" height="500" rx="12" fill="url(#bgG)"/>
+  <rect width="920" height="500" rx="12" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+
+  <!-- Title -->
+  <text x="460" y="32" text-anchor="middle" fill="#4da6ff" font-family="sans-serif" font-size="16" font-weight="800" letter-spacing="2">YOLO11m — One-Stage Multi-Scale Object Detection</text>
+  <line x1="180" y1="42" x2="740" y2="42" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+  <!-- ============ LEFT: INPUT ============ -->
+  <text x="138" y="62" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="sans-serif" font-size="11" font-weight="600">Input Image</text>
+
+  <!-- Simplified drone-view crowd scene -->
+  <rect x="38" y="70" width="200" height="180" rx="8" fill="#0a1628" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <!-- Sky gradient -->
+  <rect x="38" y="70" width="200" height="80" rx="8" fill="rgba(30,60,100,0.3)"/>
+  <!-- Ground -->
+  <rect x="38" y="150" width="200" height="100" fill="rgba(40,50,40,0.4)"/>
+  <!-- Road -->
+  <rect x="38" y="170" width="200" height="14" fill="rgba(80,80,80,0.5)"/>
+  <!-- Buildings -->
+  <rect x="48" y="110" width="30" height="40" rx="1" fill="rgba(60,70,80,0.5)"/>
+  <rect x="82" y="100" width="25" height="50" rx="1" fill="rgba(50,60,70,0.5)"/>
+  <rect x="140" y="115" width="35" height="35" rx="1" fill="rgba(55,65,75,0.5)"/>
+  <rect x="180" y="105" width="22" height="45" rx="1" fill="rgba(45,55,65,0.5)"/>
+  <!-- People (small dots) -->
+  <circle cx="60" cy="178" r="2" fill="#ff8c42"/><circle cx="65" cy="180" r="2" fill="#ff8c42"/>
+  <circle cx="90" cy="176" r="2" fill="#ff8c42"/><circle cx="100" cy="179" r="2" fill="#ff8c42"/>
+  <circle cx="110" cy="177" r="2" fill="#ff8c42"/><circle cx="118" cy="180" r="2" fill="#ff8c42"/>
+  <circle cx="130" cy="176" r="2" fill="#ff8c42"/><circle cx="145" cy="178" r="2" fill="#ff8c42"/>
+  <circle cx="155" cy="179" r="2" fill="#ff8c42"/><circle cx="168" cy="177" r="2" fill="#ff8c42"/>
+  <circle cx="180" cy="180" r="2" fill="#ff8c42"/><circle cx="195" cy="176" r="2" fill="#ff8c42"/>
+  <circle cx="75" cy="184" r="2" fill="#ff8c42"/><circle cx="140" cy="183" r="2" fill="#ff8c42"/>
+  <circle cx="160" cy="184" r="2" fill="#ff8c42"/>
+  <!-- Trees -->
+  <circle cx="50" cy="155" r="12" fill="rgba(30,70,30,0.5)"/>
+  <circle cx="195" cy="160" r="10" fill="rgba(30,60,30,0.5)"/>
+  <!-- Drone shadow hint -->
+  <ellipse cx="140" cy="130" rx="15" ry="6" fill="rgba(0,0,0,0.2)"/>
+
+  <text x="138" y="268" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-size="9">640 × 640 × 3</text>
+
+  <!-- Input → Feature arrows -->
+  <line x1="238" y1="140" x2="275" y2="140" stroke="#6a9fd8" stroke-width="1.5" marker-end="url(#arrB)"/>
+  <line x1="238" y1="160" x2="275" y2="205" stroke="#6a9fd8" stroke-width="1.2" marker-end="url(#arrB)"/>
+  <line x1="238" y1="180" x2="275" y2="330" stroke="#6a9fd8" stroke-width="1.2" marker-end="url(#arrB)"/>
+
+  <!-- ============ CENTER: Multi-Scale Feature Detection ============ -->
+  <rect x="277" y="52" width="370" height="320" rx="8" fill="rgba(30,60,120,0.04)" stroke="rgba(77,166,255,0.12)" stroke-width="1"/>
+  <text x="462" y="72" text-anchor="middle" fill="#4da6ff" font-family="sans-serif" font-size="12" font-weight="700" letter-spacing="1">MULTI-SCALE DETECTION</text>
+
+  <!-- P3: 80x80 scale (small objects) -->
+  <rect x="295" y="88" width="335" height="68" rx="7" fill="rgba(77,166,255,0.04)" stroke="rgba(77,166,255,0.2)" stroke-width="0.8"/>
+  <text x="310" y="108" fill="#4da6ff" font-family="sans-serif" font-size="10" font-weight="700">P3 — Small Object Head (Stride 8)</text>
+
+  <!-- Feature grid 5x3 representation -->
+  <g transform="translate(310, 114)">
+    <rect x="0" y="0" width="40" height="34" rx="3" fill="rgba(77,166,255,0.08)" stroke="rgba(77,166,255,0.15)" stroke-width="0.5"/>
+    <line x1="0" y1="8" x2="40" y2="8" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <line x1="0" y1="17" x2="40" y2="17" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <line x1="0" y1="26" x2="40" y2="26" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <line x1="10" y1="0" x2="10" y2="34" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <line x1="20" y1="0" x2="20" y2="34" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <line x1="30" y1="0" x2="30" y2="34" stroke="rgba(255,255,255,0.06)" stroke-width="0.3"/>
+    <!-- Highlighted cell -->
+    <rect x="10" y="9" width="10" height="8" rx="1" fill="rgba(77,166,255,0.2)" stroke="#4da6ff" stroke-width="0.5"/>
+  </g>
+  <text x="368" y="145" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="8">80×80 grid — detects tiny/far objects</text>
+  <rect x="525" y="108" width="90" height="30" rx="4" fill="rgba(77,166,255,0.06)" stroke="rgba(77,166,255,0.2)" stroke-width="0.6"/>
+  <text x="570" y="127" text-anchor="middle" fill="#b0cde8" font-family="sans-serif" font-size="8">cls + bbox + dfl</text>
+
+  <!-- Arrow P3 → P4 -->
+  <line x1="462" y1="156" x2="462" y2="170" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+
+  <!-- P4: 40x40 scale (medium objects) -->
+  <rect x="295" y="172" width="335" height="68" rx="7" fill="rgba(0,212,170,0.04)" stroke="rgba(0,212,170,0.2)" stroke-width="0.8"/>
+  <text x="310" y="192" fill="#00d4aa" font-family="sans-serif" font-size="10" font-weight="700">P4 — Medium Object Head (Stride 16)</text>
+  <!-- Feature grid -->
+  <g transform="translate(310, 198)">
+    <rect x="0" y="0" width="40" height="34" rx="3" fill="rgba(0,212,170,0.06)" stroke="rgba(0,212,170,0.12)" stroke-width="0.5"/>
+    <line x1="0" y1="11" x2="40" y2="11" stroke="rgba(255,255,255,0.05)" stroke-width="0.3"/>
+    <line x1="0" y1="22" x2="40" y2="22" stroke="rgba(255,255,255,0.05)" stroke-width="0.3"/>
+    <line x1="13" y1="0" x2="13" y2="34" stroke="rgba(255,255,255,0.05)" stroke-width="0.3"/>
+    <line x1="26" y1="0" x2="26" y2="34" stroke="rgba(255,255,255,0.05)" stroke-width="0.3"/>
+    <rect x="13" y="11" width="13" height="11" rx="1" fill="rgba(0,212,170,0.18)" stroke="#00d4aa" stroke-width="0.5"/>
+  </g>
+  <text x="368" y="229" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="8">40×40 grid — detects mid-range objects</text>
+  <rect x="525" y="192" width="90" height="30" rx="4" fill="rgba(0,212,170,0.06)" stroke="rgba(0,212,170,0.2)" stroke-width="0.6"/>
+  <text x="570" y="211" text-anchor="middle" fill="#b0e8d8" font-family="sans-serif" font-size="8">cls + bbox + dfl</text>
+
+  <!-- Arrow P4 → P5 -->
+  <line x1="462" y1="240" x2="462" y2="254" stroke="rgba(255,255,255,0.2)" stroke-width="0.8"/>
+
+  <!-- P5: 20x20 scale (large objects) -->
+  <rect x="295" y="256" width="335" height="68" rx="7" fill="rgba(245,158,11,0.04)" stroke="rgba(245,158,11,0.2)" stroke-width="0.8"/>
+  <text x="310" y="276" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700">P5 — Large Object Head (Stride 32)</text>
+  <!-- Feature grid -->
+  <g transform="translate(310, 282)">
+    <rect x="0" y="0" width="40" height="34" rx="3" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.12)" stroke-width="0.5"/>
+    <line x1="0" y1="17" x2="40" y2="17" stroke="rgba(255,255,255,0.04)" stroke-width="0.3"/>
+    <line x1="20" y1="0" x2="20" y2="34" stroke="rgba(255,255,255,0.04)" stroke-width="0.3"/>
+    <rect x="10" y="8" width="20" height="18" rx="1" fill="rgba(245,158,11,0.16)" stroke="#f59e0b" stroke-width="0.5"/>
+  </g>
+  <text x="368" y="313" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="8">20×20 grid — detects large/near objects</text>
+  <rect x="525" y="276" width="90" height="30" rx="4" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.2)" stroke-width="0.6"/>
+  <text x="570" y="295" text-anchor="middle" fill="#f0d8b0" font-family="sans-serif" font-size="8">cls + bbox + dfl</text>
+
+  <!-- NMS Merge -->
+  <text x="462" y="342" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="9">↓ NMS + Multi-scale Fusion ↓</text>
+
+  <!-- ============ P3/P4/P5 → output arrows ============ -->
+  <path d="M630 122 C660 122 660 160 682 160" stroke="#4da6ff" stroke-width="1" marker-end="url(#arrB)" fill="none"/>
+  <path d="M630 206 C660 206 660 160 682 160" stroke="#00d4aa" stroke-width="1" marker-end="url(#arrG)" fill="none"/>
+  <path d="M630 290 C660 290 660 160 682 160" stroke="#f59e0b" stroke-width="1" marker-end="url(#arrO)" fill="none"/>
+
+  <!-- ============ RIGHT: OUTPUT ============ -->
+  <text x="782" y="62" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-family="sans-serif" font-size="11" font-weight="600">Detection Output</text>
+
+  <!-- Output image with bounding boxes -->
+  <rect x="682" y="70" width="200" height="180" rx="8" fill="#0a1628" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <!-- Same scene but with detection boxes -->
+  <rect x="682" y="70" width="200" height="80" rx="8" fill="rgba(30,60,100,0.3)"/>
+  <rect x="682" y="150" width="200" height="100" fill="rgba(40,50,40,0.4)"/>
+  <rect x="682" y="170" width="200" height="14" fill="rgba(80,80,80,0.5)"/>
+  <rect x="692" y="110" width="30" height="40" rx="1" fill="rgba(60,70,80,0.5)"/>
+  <rect x="726" y="100" width="25" height="50" rx="1" fill="rgba(50,60,70,0.5)"/>
+  <rect x="784" y="115" width="35" height="35" rx="1" fill="rgba(55,65,75,0.5)"/>
+  <circle cx="696" cy="160" r="10" fill="rgba(30,70,30,0.5)"/>
+
+  <!-- Detection bounding boxes -->
+  <rect x="700" y="173" width="18" height="12" rx="1" fill="none" stroke="#00ff88" stroke-width="1.2"/>
+  <rect x="722" y="171" width="16" height="14" rx="1" fill="none" stroke="#00ff88" stroke-width="1.2"/>
+  <rect x="742" y="174" width="18" height="10" rx="1" fill="none" stroke="#ff4444" stroke-width="1.2"/>
+  <rect x="765" y="172" width="14" height="12" rx="1" fill="none" stroke="#00ff88" stroke-width="1.2"/>
+  <rect x="785" y="175" width="20" height="9" rx="1" fill="none" stroke="#00ff88" stroke-width="1.2"/>
+  <rect x="810" y="173" width="16" height="13" rx="1" fill="none" stroke="#ffaa00" stroke-width="1.2"/>
+  <rect x="830" y="176" width="15" height="10" rx="1" fill="none" stroke="#00ff88" stroke-width="1.2"/>
+  <rect x="720" y="180" width="14" height="9" rx="1" fill="none" stroke="#00ff88" stroke-width="1"/>
+  <rect x="750" y="182" width="12" height="8" rx="1" fill="none" stroke="#00ff88" stroke-width="1"/>
+
+  <!-- Confidence labels on a few boxes -->
+  <text x="702" y="170" fill="#00ff88" font-family="sans-serif" font-size="6">0.94</text>
+  <text x="767" y="169" fill="#00ff88" font-family="sans-serif" font-size="6">0.87</text>
+
+  <!-- Legend -->
+  <rect x="692" y="215" width="8" height="6" rx="1" fill="none" stroke="#00ff88" stroke-width="0.8"/>
+  <text x="704" y="221" fill="rgba(255,255,255,0.35)" font-family="sans-serif" font-size="7">Person 0.83~0.96</text>
+  <rect x="752" y="215" width="8" height="6" rx="1" fill="none" stroke="#ff4444" stroke-width="0.8"/>
+  <text x="764" y="221" fill="rgba(255,255,255,0.35)" font-family="sans-serif" font-size="7">False Pos.</text>
+  <rect x="812" y="215" width="8" height="6" rx="1" fill="none" stroke="#ffaa00" stroke-width="0.8"/>
+  <text x="824" y="221" fill="rgba(255,255,255,0.35)" font-family="sans-serif" font-size="7">Occluded</text>
+
+  <text x="782" y="268" text-anchor="middle" fill="rgba(255,255,255,0.25)" font-family="sans-serif" font-size="9">NMS threshold = 0.65</text>
+
+  <!-- ============ BOTTOM INFO ============ -->
+  <line x1="40" y1="395" x2="880" y2="395" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Key technique cards -->
+  <rect x="40" y="410" width="200" height="70" rx="6" fill="rgba(77,166,255,0.04)" stroke="rgba(77,166,255,0.12)" stroke-width="0.8"/>
+  <text x="140" y="432" text-anchor="middle" fill="#4da6ff" font-family="sans-serif" font-size="10" font-weight="700">Decoupled Head</text>
+  <text x="140" y="448" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="8">Classification &amp; Regression</text>
+  <text x="140" y="464" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="7">separated for better convergence</text>
+
+  <rect x="255" y="410" width="200" height="70" rx="6" fill="rgba(0,212,170,0.04)" stroke="rgba(0,212,170,0.12)" stroke-width="0.8"/>
+  <text x="355" y="432" text-anchor="middle" fill="#00d4aa" font-family="sans-serif" font-size="10" font-weight="700">Anchor-Free</text>
+  <text x="355" y="448" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="8">Direct box regression</text>
+  <text x="355" y="464" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="7">no preset anchor boxes needed</text>
+
+  <rect x="470" y="410" width="200" height="70" rx="6" fill="rgba(245,158,11,0.04)" stroke="rgba(245,158,11,0.12)" stroke-width="0.8"/>
+  <text x="570" y="432" text-anchor="middle" fill="#f59e0b" font-family="sans-serif" font-size="10" font-weight="700">CSPDarknet + PAN-FPN</text>
+  <text x="570" y="448" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="8">Cross-Stage Partial backbone</text>
+  <text x="570" y="464" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="7">bi-directional feature pyramid</text>
+
+  <rect x="685" y="410" width="200" height="70" rx="6" fill="rgba(168,85,247,0.04)" stroke="rgba(168,85,247,0.12)" stroke-width="0.8"/>
+  <text x="785" y="432" text-anchor="middle" fill="#a78bfa" font-family="sans-serif" font-size="10" font-weight="700">Training Config</text>
+  <text x="785" y="448" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-family="sans-serif" font-size="8">YOLO11m pretrained</text>
+  <text x="785" y="464" text-anchor="middle" fill="rgba(255,255,255,0.3)" font-family="sans-serif" font-size="7">→ fine-tuned on VisDrone-person</text>
+</svg>

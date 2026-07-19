@@ -1,0 +1,98 @@
+# =====================================================
+# MovingDroneCrowd - GD3A 测试运行命令
+# =====================================================
+
+# 1. 环境准备
+# 安装 mmcv (注意使用 --no-build-isolation)
+pip install --no-build-isolation mmcv==1.7.1
+
+# 安装其他依赖
+pip install -r requirements.txt
+
+# timm 版本兼容性 (如果 PyTorch >= 2.4 需要升级)
+pip install timm==1.0.27
+
+# pycocotools 安装
+pip install Cython
+pip install pycocotools==2.0 --no-build-isolation
+
+# numpy 版本兼容性
+pip install numpy==1.26.4
+
+# 2. 数据集下载 (从 hf-mirror 镜像)
+wget -c "https://hf-mirror.com/datasets/fyw1999/MovingDroneCrowd/resolve/main/MovingDroneCrowd%2B%2B.zip?download=true" -O MovingDroneCrowd++.zip
+unzip -o MovingDroneCrowd++.zip
+
+# 3. 模型权重下载 (从 HuggingFace)
+# 下载后放入 pretrained/ 目录:
+#   - GD3A_MDC++_best_model_VGG16.pth
+#   - GD3A_pre_trained_global_counter_STEERER_MDC++_ep_201_mae_13.5_mse_19.1.pth
+
+# 注意: 文件名中的 + 号不要被 URL 编码为 %2B，需要重命名:
+# cd pretrained
+# mv 'GD3A_MDC%2B%2B_best_model_VGG16.pth' 'GD3A_MDC++_best_model_VGG16.pth'
+# mv 'GD3A_pre_trained_global_counter_STEERER_MDC%2B%2B_ep_201_mae_13.5_mse_19.1.pth' 'GD3A_pre_trained_global_counter_STEERER_MDC++_ep_201_mae_13.5_mse_19.1.pth'
+
+# 4. VGG16 backbone 权重 (PyTorch 自动下载可能很慢，建议手动下载)
+mkdir -p ~/.cache/torch/hub/checkpoints/
+wget -c "https://download.pytorch.org/models/vgg16_bn-6c64b313.pth" -O ~/.cache/torch/hub/checkpoints/vgg16_bn-6c64b313.pth
+
+# 5. 修改数据集路径
+# 编辑 cusdatasets/setting/MovingDroneCrowd.py
+# 将 __C_MDC.DATA_PATH 改为你的数据集路径
+
+# 6. 运行 GD3A 测试 (VGG16 backbone)
+python3 test.py \
+    --MODEL GD3A \
+    --DATASET MovingDroneCrowd \
+    --model_path ./pretrained/GD3A_MDC++_best_model_VGG16.pth \
+    --counter STEERER \
+    --pre_trained_counter_path "./pretrained/GD3A_pre_trained_global_counter_STEERER_MDC++_ep_201_mae_13.5_mse_19.1.pth" \
+    --output_dir test_results \
+    --test_name gd3a_vgg16 \
+    --GPU_ID 0
+
+# 7. 测试结果
+# ==================== all ====================
+# MAE: 45.75, MSE: 73.77  WRAE: 22.97 WIAE: 3.94 WOAE: 4.40
+# ==================== density0 ====================
+# MAE: 21.43, MSE: 30.87  WRAE: 23.50 WIAE: 2.29 WOAE: 1.98
+# ==================== density1 ====================
+# MAE: 86.13, MSE: 98.88  WRAE: 33.36 WIAE: 7.32 WOAE: 10.89
+# ==================== density2 ====================
+# MAE: 86.55, MSE: 128.34  WRAE: 27.04 WIAE: 5.95 WOAE: 6.55
+# ==================== density3 ====================
+# MAE: 115.95, MSE: 137.11  WRAE: 6.00 WIAE: 5.20 WOAE: 5.36
+# Single Image MAE: 16.70, MSE: 29.26
+
+# 8. 带可视化的测试 (保存密度图 .tiff)
+# 需要先安装 imagecodecs: pip install imagecodecs
+python3 test.py \
+    --MODEL GD3A \
+    --DATASET MovingDroneCrowd \
+    --model_path ./pretrained/GD3A_MDC++_best_model_VGG16.pth \
+    --counter STEERER \
+    --pre_trained_counter_path "./pretrained/GD3A_pre_trained_global_counter_STEERER_MDC++_ep_201_mae_13.5_mse_19.1.pth" \
+    --output_dir test_results \
+    --test_name gd3a_vgg16_visual \
+    --GPU_ID 0 \
+    --test_visual True
+
+# 9. 生成带框+ID的标注可视化（基于GT）
+python3 vis_boxes.py --split MovingDroneCrowd++/test.txt --max_scenes 50 --max_frames 30
+# 输出: vis_boxes/ 目录，每个场景有 *_vis.jpg (框+ID) 和 *_zoom.jpg (局部放大)
+
+# 10. 离线视频处理（无人机视频 → 带检测框+ID+计数的视频）
+python3 video_demo.py \
+    --video /path/to/your/drone_video.mp4 \
+    --output output_annotated.mp4 \
+    --model_path ./pretrained/GD3A_MDC++_best_model_VGG16.pth \
+    --counter_path ./pretrained/GD3A_pre_trained_global_counter_STEERER_MDC++_ep_201_mae_13.5_mse_19.1.pth \
+    --interval 4 \
+    --GPU_ID 0
+# 参数说明:
+#   --video: 输入视频路径
+#   --output: 输出视频路径
+#   --interval: 每隔多少帧做一次推理（默认4，越小越密但越慢）
+#   --zoom: 是否生成局部放大效果（默认开启）
+#   --zoom_scale: 放大倍数（默认2.5）

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D 密度地形图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e8ecf1;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    padding: 40px;
+  }
+  .card {
+    background: #0c1421;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.08);
+    width: 1100px; max-width: 95vw; overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 22px 28px 14px;
+  }
+  .card-title {
+    font-size: 20px; font-weight: 700; color: #fff; letter-spacing: 0.5px;
+  }
+  .card-tag {
+    font-size: 11px; font-weight: 600; color: #c4b5fd;
+    background: rgba(139,92,246,0.14); border: 1px solid rgba(139,92,246,0.25);
+    border-radius: 14px; padding: 5px 14px; letter-spacing: 1px;
+  }
+  .card-body { padding: 0 24px 24px; }
+  .plot-area {
+    width: 100%; height: 520px;
+    background: #060d18;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.04);
+    position: relative; overflow: hidden;
+  }
+  #container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+  /* ── 图例与标注（深色半透明底，不抢眼） ── */
+  .legend-bar {
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    display: flex; align-items: center; gap: 6px;
+    z-index: 10; pointer-events: none;
+  }
+  .legend-gradient {
+    width: 10px; height: 140px; border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(to bottom,
+      #f97b2d 0%, #e8a820 8%, #82cc28 20%, #27c918 35%,
+      #0fd856 50%, #09c8ae 65%, #06b8e8 80%, #0685d0 92%, #0533a8 100%);
+  }
+  .legend-labels {
+    display: flex; flex-direction: column; justify-content: space-between;
+    height: 140px;
+  }
+  .legend-labels span {
+    font-size: 9px; color: rgba(255,255,255,0.40);
+    letter-spacing: 0.5px; line-height: 1;
+  }
+  .info-overlay {
+    position: absolute; left: 14px; bottom: 12px;
+    display: flex; gap: 18px;
+    z-index: 10; pointer-events: none;
+  }
+  .info-overlay .info-kv {
+    display: flex; flex-direction: column; gap: 1px;
+  }
+  .info-overlay .info-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.65);
+  }
+  .info-overlay .info-key {
+    font-size: 9px; color: rgba(255,255,255,0.28);
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">3D 密度地形图</div>
+    <div class="card-tag">Terrain</div>
+  </div>
+  <div class="card-body">
+    <div class="plot-area">
+      <div id="container"></div>
+      <div class="legend-bar">
+        <div class="legend-gradient"></div>
+        <div class="legend-labels">
+          <span>高</span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span>低</span>
+        </div>
+      </div>
+      <div class="info-overlay">
+        <div class="info-kv"><span class="info-val" id="infoRes">180×100</span><span class="info-key">网格分辨率</span></div>
+        <div class="info-kv"><span class="info-val" id="infoPeak">—</span><span class="info-key">峰值密度</span></div>
+        <div class="info-kv"><span class="info-val" id="infoPeaks">—</span><span class="info-key">山峰数量</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.157.0/build/three.module.js" } }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+// ═══════════════════════════════════════════
+// 1. 双线性上采样（将任意小网格插值到目标分辨率）
+// ═══════════════════════════════════════════
+function upsampleBilinear(src, srcRows, srcCols, dstRows, dstCols) {
+  const dst = new Float32Array(dstRows * dstCols);
+  const sx = (srcCols - 1) / Math.max(dstCols - 1, 1);
+  const sy = (srcRows - 1) / Math.max(dstRows - 1, 1);
+  for (let dr = 0; dr < dstRows; dr++) {
+    for (let dc = 0; dc < dstCols; dc++) {
+      const fx = dc * sx, fy = dr * sy;
+      const sc = Math.min(Math.floor(fx), srcCols - 2);
+      const sr = Math.min(Math.floor(fy), srcRows - 2);
+      const tx = fx - sc, ty = fy - sr;
+      const a = src[sr * srcCols + sc];
+      const b = src[sr * srcCols + sc + 1];
+      const c = src[(sr + 1) * srcCols + sc];
+      const d = src[(sr + 1) * srcCols + sc + 1];
+      dst[dr * dstCols + dc] = (1 - ty) * ((1 - tx) * a + tx * b) + ty * ((1 - tx) * c + tx * d);
+    }
+  }
+  return dst;
+}
+
+// ═══════════════════════════════════════════
+// 2. 密度数据生成：大量不同尺寸的高斯峰
+// ═══════════════════════════════════════════
+const SRC_COLS = 80, SRC_ROWS = 40;  // 原始采样网格
+const DST_COLS = 180, DST_ROWS = 100; // 目标渲染网格
+
+function generateDensity() {
+  const raw = new Float32Array(SRC_ROWS * SRC_COLS);
+  const peaks = [];
+
+  // 中部密集峰群（~120 个）
+  for (let i = 0; i < 120; i++) {
+    peaks.push({
+      cx: 0.15 + Math.random() * 0.70,
+      cy: 0.10 + Math.random() * 0.80,
+      sx: 0.010 + Math.random() * 0.028,
+      sy: 0.015 + Math.random() * 0.035,
+      amp: 0.25 + Math.random() * 0.55
+    });
+  }
+  // 两侧稀疏孤立峰（~20 个）
+  for (let i = 0; i < 20; i++) {
+    const leftSide = Math.random() < 0.5;
+    peaks.push({
+      cx: leftSide ? 0.02 + Math.random() * 0.16 : 0.84 + Math.random() * 0.14,
+      cy: 0.05 + Math.random() * 0.90,
+      sx: 0.008 + Math.random() * 0.018,
+      sy: 0.012 + Math.random() * 0.025,
+      amp: 0.30 + Math.random() * 0.45
+    });
+  }
+  // 少量显著高峰（~10 个），分布偏中部
+  for (let i = 0; i < 10; i++) {
+    peaks.push({
+      cx: 0.30 + Math.random() * 0.40,
+      cy: 0.25 + Math.random() * 0.50,
+      sx: 0.006 + Math.random() * 0.012,
+      sy: 0.010 + Math.random() * 0.018,
+      amp: 0.75 + Math.random() * 0.25
+    });
+  }
+  // 底层连续微起伏（~200 个极小峰）
+  for (let i = 0; i < 200; i++) {
+    peaks.push({
+      cx: Math.random(), cy: Math.random(),
+      sx: 0.025 + Math.random() * 0.06,
+      sy: 0.030 + Math.random() * 0.08,
+      amp: 0.04 + Math.random() * 0.12
+    });
+  }
+
+  for (let r = 0; r < SRC_ROWS; r++) {
+    for (let c = 0; c < SRC_COLS; c++) {
+      const nx = c / (SRC_COLS - 1), ny = r / (SRC_ROWS - 1);
+      let v = 0;
+      for (const p of peaks) {
+        const dx = (nx - p.cx) / p.sx, dy = (ny - p.cy) / p.sy;
+        v += p.amp * Math.exp(-0.5 * (dx * dx + dy * dy));
+      }
+      raw[r * SRC_COLS + c] = Math.max(0, v);
+    }
+  }
+  // 双线性上采样到目标分辨率
+  const upsampled = upsampleBilinear(raw, SRC_ROWS, SRC_COLS, DST_ROWS, DST_COLS);
+  return { values: upsampled, rows: DST_ROWS, cols: DST_COLS, max: Math.max(...upsampled) };
+}
+
+const density = generateDensity();
+document.getElementById('infoPeak').textContent = density.max.toFixed(3);
+document.getElementById('infoPeaks').textContent = '350';
+document.getElementById('infoRes').textContent = `${density.cols}×${density.rows}`;
+
+// ═══════════════════════════════════════════
+// 3. Three.js 场景
+// ═══════════════════════════════════════════
+const container = document.getElementById('container');
+const cw = container.clientWidth, ch = container.clientHeight;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060d18);
+scene.fog = new THREE.Fog(0x060d18, 70, 240);
+
+// 低角度斜俯视，相机拉近
+const camera = new THREE.PerspectiveCamera(42, cw / ch, 0.1, 600);
+camera.position.set(0, 36, 88);
+camera.lookAt(0, 2.5, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(cw, ch);
+container.appendChild(renderer.domElement);
+
+// ═══════════════════════════════════════════
+// 4. 地形网格构建
+// ═══════════════════════════════════════════
+function buildTerrain(density) {
+  const { values, rows, cols, max } = density;
+  const safeMax = Math.max(max, 1e-8);
+
+  // 地形在画布中占 ~80% 宽 × ~35% 高
+  const scaleX = 100;
+  const scaleZ = 80;
+  const heightScale = 11;
+  const gamma = 2.2;  // 尖锐但不过度
+
+  const vertices = [], colors = [], indices = [];
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const v = values[r * cols + c] || 0;
+      const norm = Math.max(0, Math.min(v / safeMax, 1));
+      const elev = Math.pow(norm, gamma) * heightScale;
+
+      vertices.push(
+        (c / (cols - 1) - 0.5) * scaleX,
+        elev,
+        (r / (rows - 1) - 0.5) * scaleZ
+      );
+
+      // 色彩：冷蓝→青为主，仅尖峰处带暖色
+      const hue = 0.64 - norm * 0.36;
+      const sat = 0.88;
+      const light = 0.34 + norm * 0.28;
+      const color = new THREE.Color();
+      if (norm > 0.82) {
+        const t = (norm - 0.82) / 0.18;
+        color.setHSL(0.28 - t * 0.28, 0.94, 0.40 + t * 0.22);
+      } else {
+        color.setHSL(hue, sat, light);
+      }
+      colors.push(color.r, color.g, color.b);
+    }
+  }
+
+  for (let r = 0; r < rows - 1; r++) {
+    for (let c = 0; c < cols - 1; c++) {
+      const a = r * cols + c, b = a + 1, d = a + cols, e = d + 1;
+      indices.push(a, b, e); indices.push(a, e, d);
+    }
+  }
+
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  geom.setIndex(indices);
+  geom.computeVertexNormals();
+  return geom;
+}
+
+const geometry = buildTerrain(density);
+
+// ═══════════════════════════════════════════
+// 5. 底座网格平面
+// ═══════════════════════════════════════════
+function buildBaseGrid() {
+  const gw = 108, gd = 88, step = 2;
+  const pts = [];
+  const y = -0.4;
+  for (let x = -gw / 2; x <= gw / 2; x += step) {
+    pts.push(x, y, -gd / 2, x, y, gd / 2);
+  }
+  for (let z = -gd / 2; z <= gd / 2; z += step) {
+    pts.push(-gw / 2, y, z, gw / 2, y, z);
+  }
+  const geom = new THREE.BufferGeometry();
+  geom.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  return new THREE.LineSegments(geom,
+    new THREE.LineBasicMaterial({ color: 0x1e4070, transparent: true, opacity: 0.15 }));
+}
+
+// ═══════════════════════════════════════════
+// 6. 场景组装
+// ═══════════════════════════════════════════
+const group = new THREE.Group();
+group.rotation.x = -0.25;
+scene.add(group);
+
+const mesh = new THREE.Mesh(geometry,
+  new THREE.MeshPhongMaterial({
+    vertexColors: true, side: THREE.DoubleSide, shininess: 30, specular: 0x0a0a0a
+  })
+);
+group.add(mesh);
+
+// 极细淡的线框
+const wireframe = new THREE.LineSegments(
+  new THREE.WireframeGeometry(geometry),
+  new THREE.LineBasicMaterial({ color: 0x6699bb, transparent: true, opacity: 0.05 })
+);
+group.add(wireframe);
+
+group.add(buildBaseGrid());
+
+// ═══════════════════════════════════════════
+// 7. 光照
+// ═══════════════════════════════════════════
+scene.add(new THREE.AmbientLight(0x334466, 0.58));
+const key = new THREE.DirectionalLight(0xffffff, 1.10);
+key.position.set(52, 65, 42);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x335588, 0.25);
+fill.position.set(-28, 18, -24);
+scene.add(fill);
+const rim = new THREE.DirectionalLight(0x335588, 0.32);
+rim.position.set(0, 6, -38);
+scene.add(rim);
+
+// ═══════════════════════════════════════════
+// 8. 交互
+// ═══════════════════════════════════════════
+let dragging = false, lastX = 0, lastY = 0;
+
+renderer.domElement.addEventListener('pointerdown', e => {
+  dragging = true; lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('pointerup', () => { dragging = false; });
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  group.rotation.y += (e.clientX - lastX) * 0.006;
+  group.rotation.x += (e.clientY - lastY) * 0.004;
+  group.rotation.x = Math.max(-0.55, Math.min(0.08, group.rotation.x));
+  lastX = e.clientX; lastY = e.clientY;
+});
+renderer.domElement.addEventListener('wheel', e => {
+  e.preventDefault();
+  camera.position.z += e.deltaY * 0.06;
+  camera.position.z = Math.max(55, Math.min(180, camera.position.z));
+});
+
+// ═══════════════════════════════════════════
+// 9. 动画
+// ═══════════════════════════════════════════
+function animate() {
+  requestAnimationFrame(animate);
+  if (!dragging) group.rotation.y += 0.0012;
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  const w = container.clientWidth, h = container.clientHeight;
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h);
+});
+</script>
+</body>
+</html>
